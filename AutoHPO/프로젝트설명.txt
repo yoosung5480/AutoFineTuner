@@ -1,0 +1,79 @@
+## AutoFineTuner 오픈소스 라이브러리 개발 프로젝트.
+
+### 개발배경 : 
+Dacon, Kaggle 또는 여타 산업에서 자신의 아이디어를 일단 돌아가는 훈련코드를 적용시키는것만으로 끝이 아니다.
+보통 그렇게 준비된 단일파일에 대해서, 여러 실험적용을 하면서 에포크 수를 맞춰가고, 또한 하이퍼파라미터를 조절하면서 세부 성능개선이 뒷받혀줘야한다.
+이는 보통의 연구자나, AI개발자에게 가장피로하고 자동화가 필요한 부분이다. 
+그렇기에 작동을 보장하는 완성된 코드가 있을때, 사용자의 지시용 프롬프트(예를들어, 이틀내에 훈련결과를 내야해. GPU번호는 반드시 4번을 써야해. cuda-visible 번호를 4번으로 설정해줘.)와 함께제공되면 알아서 AI agent가 이를 완료해주는 라이브러리가 필요하다 생각했다.
+
+
+### 개발목표:
+target.py이 아래의 조건을 만족할때, 이 코드를 리펙토링해서 자동으로 하이퍼파라미터를 선정하고, 실험적용해서 세부 성능개선을 해주는 AIagent 개발을 목표로한다.
+1. 데이터셋 정의
+2. 모델정의
+3. 모델훈련
+4. 예측
+
+이 코드가 이미 작동하고, 위 4가지 기능이 완성돼있는 코드일경우에 내 라이브러리를 적용할수있다.
+나만의 workflow를 잘 설정해서, 논문이나 시중 코드를 기반으로 적당한 epoch를 사전지식 기반으로 먼저 선정하고,
+그 후 하이퍼파라미터또한 논문이나 시중 코드를 기반으로 적당한 값을 기준삼아서 시작할것이다.
+실제 개발자들이 해당 값들에 대한 인터넷 서칭으로 많은 시간을 쓴다는걸 감안해서 편의성을 제공하고자 한다.
+또한 그런 선정기준에 대해서는 따로 설명글로 반환해서 개발자가 자신의 훈련 과정을 이해할수 있게 해야한다.
+
+### 라이브러리 흐름도:
+step1 : target.py + 사용자프롬프트 -> codeAnalyzer -> output.py, param.txt, analyze.txt
+            output.py   # target.py를 리펙토링해서, 외부 변수로 하이퍼파라미터를 적용해서 코드를 실행할수있게 리펙토링된 코드.
+            param.txt   # 선정한 파라미터들이 들어있다.
+            analyze.txt # 선정한 파라미터들에 설명 및 적용방향.
+
+step2 : output.py, param.txt -> finetuningManager -> list(output1_time.pt, output1_time.txt)
+            output1_time.pt     # 파일명 =  "{파라미터 적용을 한 모델 훈련이 끝난 시간}" + ".pt"
+            output1_time.txt    # 파일명 =  "{파라미터 적용을 한 모델 훈련이 끝난 시간}" + ".txt", 이 모델에 어떤 파라미터 값이 적용됐는지와, 정확도 점수가 있다.
+크게 2개의 파이프라인으로 이뤄져있다.
+
+
+
+## 프로젝트구조
+ROOT_proj/
+    # AutoFineTuner가 사용되기 위한 파일들.
+    - (target.py 를 위한 기존 라이브러리나 다른 코드들.)
+    - datsets/ # target.py를 실행시키기 위한 데이터셋모음.
+    - target.py # 다른 프로젝트 구조파일을 AutoFineTuner가 모르더라도, target.py가 훈련에포크가 제대로 작동한다는 가정하에, 내 앱이 알아서 파인튜닝 해야한다.
+
+
+    - AutoFineTuner/ 
+        - workflow/
+            - __init__.py
+            - codeAnalyzer/     # target.py를 읽고 하이퍼파라미터를 선정하고, 코드를 리펙토링해서 output.py, param.txt를 만들기위한 텍스트 생성을 해야한다.
+                - __init__.py
+                - analyzer.py
+                # ... 추후 subworkflow를 통해서 업데이트
+            - finetuningManager # output.py와, param.txt를 통해서 최적의 모델 훈련을 위한 에포크와 하이퍼파라미터 튜닝을 시키는 코드이다.
+                - __init__.py
+                - manager.py
+                # ... 추후 subworkflow를 통해서 업데이트
+        - tool
+            - __init__.py
+            - codeMaker.py      # llm의 답변을 통해서 생선된 텍스트를 파이썬이나, 배시스크립트로 만들어야한다.
+            - codeReader.py     # 파이썬파일이나, 배시파일을 읽어들어와야한다. llm이 파일을 잘 이해할수있도로 파싱해야한다.
+            - codeLauncher.py   # 원하는 파일명을 지정시, 파일을 실행하게한다.
+        - __init__.py
+        - app.py    # 실제 내 라이브러리의 모든 모체가 될 파일이다.
+        - test.py
+        - test.ipynb # codeMaker, codeReader, codeLauncher, analyzer, manager 코드 실행을 미리 테스트해볼 노트북파일이다.
+
+    
+    # AutoFineTuner가 생성할 파일들.
+    - output.py
+    - outputs/
+        - best/
+            - best.pt
+            - params.txt
+        - 202508102256/
+            - 202508102256.pt
+            - params.txt
+
+
+# TODO
+1. 내가 개발하고자 하는 라이브러리가 이미 존재하는지, 이 라이브러리는 오픈소스 개발에 기여할만한 라이브러리인지 판단하라.
+2. test.ipynb 에 codeMaker, codeReader, codeLauncher, analyzer, manager를 실험적용하는것을 이제 도와라.
