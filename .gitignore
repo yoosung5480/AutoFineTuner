@@ -1,0 +1,8 @@
+.env
+*.csv
+*Test*
+*test*
+outputs/
+__pycache__/
+main.py
+datas/
