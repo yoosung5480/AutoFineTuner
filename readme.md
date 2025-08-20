@@ -45,6 +45,12 @@ AutoFineTuner/
  ├── interface/          # (추후 업데이트 예정)
  └── outputs/            # 결과물 저장
 ```
+---
+
+## 📌 라이브러리 흐름도
+
+<img width="910" height="542" alt="스크린샷 2025-08-20 오후 9 08 48" src="https://github.com/user-attachments/assets/a270ee63-42b6-40d4-afaf-3add8e137f8a" />
+
 
 ---
 
