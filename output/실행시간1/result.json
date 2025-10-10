@@ -1,9 +1,7 @@
 {
     "실행시간1": {          // refactor에 의해서 내용이 달라질수있는 파라미터. 사람이 아니라 llm이  작성하는 영역이다.
-        "target_param": "epochs",
         "validation_score": 0.8642,
         "train_score": 0.9124,
-        "loss": 0.3371,
         "params": {
             "save_path": "./outputs",
             "batch_size": 64,

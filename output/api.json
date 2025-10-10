@@ -1,15 +1,17 @@
 {
     "env": {
-        "CUDA_VISIBLE_DEVICES": "0,1",
-        "CONDA_ENV": "base",              
-        "PYTHON_ENV_PATH": "/opt/venvs/base", 
-        "USE_CONDA": true,                       
-        "script": "hello.py",
+        "CUDA_VISIBLE_DEVICES": null,
+        "CONDA_ENV": "AI",
+        "PYTHON_ENV_PATH": "/usr/bin/python",
+        "USE_CONDA": true,
+        "script": "/home/jeongyuseong/바탕화면/private/오픈소스경진대회/AutoFineTuner_2/target.py",
         "arguments": {
-            "save_path": "./outputs",
-            "batch_size": 64,
-            "epochs": 10,
-            "healthcheack": 0
+            "epochs": 1,
+            "batch_size": 128,
+            "save_dir": "./outputs",
+            "train_path": "./data/CIFAR10/",
+            "test_path": "",
+            "healthcheck": 0
         }
     }
 }
