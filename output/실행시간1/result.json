@@ -1,0 +1,36 @@
+{
+    "실행시간1": {          // refactor에 의해서 내용이 달라질수있는 파라미터. 사람이 아니라 llm이  작성하는 영역이다.
+        "target_param": "epochs",
+        "validation_score": 0.8642,
+        "train_score": 0.9124,
+        "loss": 0.3371,
+        "params": {
+            "save_path": "./outputs",
+            "batch_size": 64,
+            "epochs": 10,
+            "healthcheack": 0
+        },
+        // ------------------- 아래는 알고리즘적으로 하드코딩된 결과 --------------------
+        // runtime_info: 필수 파라미터
+        "runtime_info": {       
+            "start_time": "2025-10-07 20:15:12",
+            "end_time": "2025-10-07 20:19:58",
+            "elapsed_time_sec": 286.4
+        },
+        // execution_status: 필수 파라미터
+        "execution_status": {   
+            "success": true,
+            "error_type": null,
+            "error_message": null,
+            "exception_trace": null
+        },
+         // system_env : 필수 파라미터
+        "system_env": {        
+            "conda_env": "speaknote",
+            "cuda_visible_devices": "0,1",
+            "device": "cuda",
+            "python_version": "3.10.13",
+            "os": "macOS-arm64"
+        }
+    }
+}
