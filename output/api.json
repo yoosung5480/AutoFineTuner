@@ -1,0 +1,15 @@
+{
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1",
+        "CONDA_ENV": "base",              
+        "PYTHON_ENV_PATH": "/opt/venvs/base", 
+        "USE_CONDA": true,                       
+        "script": "hello.py",
+        "arguments": {
+            "save_path": "./outputs",
+            "batch_size": 64,
+            "epochs": 10,
+            "healthcheack": 0
+        }
+    }
+}

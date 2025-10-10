@@ -1,0 +1,20 @@
+디렉토리구조
+
+root/
+    - AutoHPO
+    - main.py               # 실행 및 리펙토링 목표코드
+    - 그 외 의존성 파일들       # 건들이지 않을 코드들
+    
+    - output.py             # 리펙토링된 실행가능코드
+    - output/
+        - metadata.py
+        - api.json
+        - 실행시간1/
+            - result.json
+            - 실행시간1.log
+            - 그 외 라이브러리 결과 부산물 (*.pt, *.csv등)
+        - 실행시간2/
+            - result.json
+            - 실행시간2.log
+            - 그 외 라이브러리 결과 부산물 (*.pt, *.csv등)
+        - ...
