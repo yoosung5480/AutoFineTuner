@@ -1,0 +1,57 @@
+// ---------------------result.json-------------------//
+// 아래는 존재함이 "보장된"부분이다.
+{
+        "실행시간1": {          
+            "validation_score": None,
+            "train_score": None,
+            "params":  {
+                "epochs": 1,
+                "batch_size": 1,
+                "lr": 0.001,
+                "test_size": 0.2,
+                "train_path": "data/train.csv",
+                "test_path": "",
+                "device": "cpu"
+            },
+            "runtime_info": {
+                "start_time": "2025-10-13 01:51:11",
+                "end_time": "2025-10-13 01:51:12",
+                "elapsed_time_sec": 0.7576942443847656
+            },
+            "execution_status": {   
+                "success": True,
+                "error_type": None,
+                "error_message": None,
+                "exception_trace": None
+            },
+            "system_env": {        
+                "conda_env": conda_env,
+                "cuda_visible_devices": "auto",
+                "device": "cuda",
+                "python_venv": python_env
+            }
+            ...(이 아래로는 라이브러리나 훈련 목표에 마다 다르게 llm 추가할수도 있다. )
+        }
+    }
+
+//-------------------api.json--------------------//
+{
+    "env": {
+        "CUDA_VISIBLE_DEVICES": null,
+        "CONDA_ENV": "machine_learning",
+        "PYTHON_ENV_PATH": "/Users/yujin/anaconda3/envs/AutoFineTuner/bin/python3.10",
+        "USE_CONDA": true,
+        "script": "output.py",
+        "arguments": {
+            "epochs": 1,
+            "batch_size": 1,
+            "save_dir": "./output",
+            "train_path": "data/train.csv",
+            "test_path": "",
+            "healthcheck": 0,
+            "test_size": 0.2,
+            "lr": 0.001
+        }
+    }
+}
+//------------------------------------------------//
