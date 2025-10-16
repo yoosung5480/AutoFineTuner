@@ -114,25 +114,42 @@ def make_code_and_excute(api_json: dict) -> int:
             log_dir="output",           # log는 output/{timestamp}/run.log 형태로 자동 저장
             conda_env=conda_env if env_info.get("USE_CONDA") else None,
             python_exec=python_env if not env_info.get("USE_CONDA") else None,
-            timeout=600,                # 10분 제한
+            timeout=None,                # 10분 제한
             raise_on_error=False
         )
+        print("============동작결과===============")
+        print(run_result)
 
         # --- 실행 결과 해석 ---
         if not run_result["ok"]:
             print(f"[EXECUTE FAIL] {run_result['error']}")
             return 1  # 런타임 오류
 
-        # --- 파일 시스템 일관성 확인 ---
+        
         # save_dir 키 이름은 코드에 따라 달라질 수 있으므로 fallback
         save_dir = Path(arguments.get("save_dir", arguments.get("save_path", "./outputs")))
-        consistency_ok = check_filesystem_consistency(save_dir)
-        if consistency_ok:
-            print("[FILESYSTEM] Consistency check passed ✅")
-            return 0
+        last_excute_result_path = get_latest_excuted_output_path(save_path=save_dir)
+        last_excute_result = read_json(last_excute_result_path)
+        run_id = list(last_excute_result.keys())[0]
+        print("latest_result_path : ", last_excute_result_path)
+        print("latest_result_json : ", last_excute_result)
+
+        # llm이 리펙토링 해준 코드가, try-except으로 감싸져있어서, 가끔 런타임 오류가 사실을 맞을때도, 런타임 오류가 뜨지 않을때가 있다.
+        # 런타임 오류 없으면 True
+        if last_excute_result[run_id]["execution_status"]["success"]:
+            # --- 파일 시스템 일관성 확인 ---:   
+            if check_filesystem_consistency(save_dir):
+                # 실행 런타임 오류도 없고, 파일시스템도 제대로 돼있으면 0을 리턴하기.
+                print("[FILESYSTEM] Consistency check passed ✅")
+                return 0
+            else:
+                print("[FILESYSTEM] Inconsistent result structure ⚠️")
+                return 2
+        # 
         else:
-            print("[FILESYSTEM] Inconsistent result structure ⚠️")
-            return 2
+            print(f"[Runtime Error Occur]")
+            return 1  # 런타임 오류
+        
 
     except Exception as e:
         print(f"[EXECUTE ERROR] {e}")
@@ -176,7 +193,6 @@ def code_excute(container: Container) -> Container:
     excuteState = make_code_and_excute(codeAPI)
 
     # --- 상태 갱신 ---
-    rewriteFlag = excuteState
     repairFlag = False
     result_data = {}
 
@@ -212,10 +228,10 @@ def code_excute(container: Container) -> Container:
     # --- 컨테이너 업데이트 ---
     container.update({
         "repairFlag": repairFlag,
-        "rewriteFlag": rewriteFlag,
+        "rewriteNodeCode": excuteState,
         "repairHistroy": repairHistroy,
         "lastExcuteResult": result_data
     })
 
-    print(f"[EXECUTE RESULT] rewriteFlag={rewriteFlag}, repairFlag={repairFlag}")
+    print(f"[EXECUTE RESULT] rewriteNodeCode={excuteState}, repairFlag={repairFlag}")
     return container

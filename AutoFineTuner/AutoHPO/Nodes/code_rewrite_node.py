@@ -52,26 +52,29 @@ def code_rewrite(container : Container) -> Container:
     python_env = container.get("pythonEnv")
     flag = container.get("rewriteNodeCode")
     repair_history = container.get("repairHistroy")
+
     repairMaxTries = container.get("repairMaxTries")
     repairNum = container.get("repairNum")
+    rewriteNodeCode = container.get(rewriteNodeCode)
 
-    print("[DEBUG] ==== current rewriteNodeCode : ", flag)
+    
     ## 컨테이너 로직관리
-    if repairNum >= repairMaxTries:
-        print("리페어 횟수초과")
-        flag = -1
-        container.update(
-            {"rewriteNodeCode": flag}
-        )
-        return container
-
     if repairNum <  repairMaxTries:
+        # flag : 0 -> 정상실행됨.
         if flag == 0:
             repairNum = 0
+        # flag : 1 -> 런타임 오류
+        # flag : 2 -> 파일 시스템 불일치
         else:
             repairNum += 1
 
-    
+    if repairNum >= repairMaxTries:
+        print("리페어 횟수초과")
+        rewriteNodeCode = -1
+        container.update({
+            "rewriteNodeCode" : rewriteNodeCode
+        })
+        return container
 
 
 

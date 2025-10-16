@@ -59,7 +59,7 @@ def make_container() -> Container:
         "repairMaxTries": 3,
         "maxFineTuningTries": 10,
         "codeAPI": {},
-        "repairNum": 0,
+        "repairNum": 1,
         "repairHistroy" : [],
         "finetuningHistory" : [],
         'lastExcuteResult' : {},

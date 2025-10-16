@@ -1,0 +1,85 @@
+이 함수는 다음 단계를 수행한다:
+(1) 데이터 로드 및 전처리
+(2) 모델 구성 및 학습
+(3) 검증 및 평가지표 계산
+(4) 모델 저장 (pickle)
+(5) result.json 파일 작성
+(6) stdout에 JSON 한 줄 출력
+(7) log 파일 기록
+
+
+# -----------------------------
+# (1) 데이터 로드 및 전처리
+# -----------------------------
+- pandas로 CSV를 읽고 feature/label로 나눈다.
+- 결측값, 범주형 인코딩 등 단순한 전처리 포함.
+- argparse의 --test_size, --scaler, --random_state 등을 활용한다.
+- train_test_split으로 데이터 분할.
+- 전처리기는 선택사항 (StandardScaler 등).
+- healthcheck 모드에서는 데이터 샘플 1개만 변환해보고 종료한다.
+
+# -----------------------------
+# (2) 모델 구성 및 학습
+# -----------------------------
+- sklearn 모델 객체(RandomForest, LogisticRegression 등)를 생성.
+- 주요 하이퍼파라미터는 argparse 인자에서 읽는다 (예: n_estimators, max_depth).
+- fit()을 호출하여 학습 수행.
+- 학습 로그를 stdout에 출력한다 (epoch 개념 없음).
+- healthcheck 모드일 경우 "READY" 출력 후 종료한다.
+
+# -----------------------------
+# (3) 검증 및 평가지표 계산  ← 강제 템플릿
+# -----------------------------
+from sklearn.metrics import accuracy_score, f1_score
+val_pred = model.predict(X_val)
+train_pred = model.predict(X_train)
+val_metric = accuracy_score(y_val, val_pred)
+train_metric = accuracy_score(y_train, train_pred)
+print(f"Validation: {val_metric:.4f} | Train: {train_metric:.4f}")
+
+# -----------------------------
+# (4) 모델 저장  ← 강제 템플릿
+# -----------------------------
+from pathlib import Path
+import pickle
+model_path = run_dir / "model.pt"
+with open(model_path, "wb") as f:
+    pickle.dump(model, f)
+print(f"Model saved at: {model_path}")
+
+# -----------------------------
+# (5) result.json 파일 작성  ← 강제 템플릿
+# -----------------------------
+result = ⟦
+    "실행시간1": ⟦
+        "validation_score": val_metric,
+        "train_score": train_metric,
+        "params": vars(args),
+        "runtime_info": ⟦
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time_sec": time.time() - t0
+        ⟧,
+        "execution_status": ⟦
+            "success": True,
+            "error_type": None,
+            "error_message": None,
+            "exception_trace": None
+        ⟧
+    ⟧
+⟧
+with open(run_dir / "result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=4)
+print("Result JSON saved.")
+
+# -----------------------------
+# (6) stdout에 JSON 한 줄 출력  ← 강제 템플릿
+# -----------------------------
+sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\\n")
+sys.stdout.flush()
+
+# -----------------------------
+# (7) log 파일 기록  ← 강제 템플릿
+# -----------------------------
+# stdout 리다이렉션에 의해 자동 기록됨
+print("⟦timestamp⟧ execution completed successfully.")

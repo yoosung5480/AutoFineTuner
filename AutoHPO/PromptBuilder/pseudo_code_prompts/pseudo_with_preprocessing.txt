@@ -1,0 +1,118 @@
+이 함수는 다음 단계를 수행한다:
+(1) 데이터 로드 및 전처리 (Scaling, Tokenizing, Augmentation 포함)
+(2) 모델 구성 및 학습
+(3) 검증 및 평가지표 계산
+(4) 모델 저장 (<save_dir>/model.pt)
+(5) result.json 파일 작성 (위 스켈레톤 기반)
+(6) stdout에 JSON 한 줄 출력
+(7) log 파일 기록
+
+
+# -----------------------------
+# (1) 데이터 로드 및 전처리
+# -----------------------------
+- argparse에서 전달된 train_path, test_path를 통해 데이터를 불러온다.
+- CSV의 경우 pandas.read_csv(), 이미지의 경우 torchvision.datasets.ImageFolder(), 텍스트의 경우 HuggingFace Datasets를 사용하라.
+- feature/label을 분리하고, numpy 또는 tensor로 변환한다.
+- 전처리 관련 하이퍼파라미터 예시는 다음과 같다:
+    --scaler (standard, minmax, none)
+    --augment (0/1)
+    --max_len (int)
+    --tokenizer (str)
+- 스케일러 예시:
+    if args.scaler == "standard": use StandardScaler
+    elif args.scaler == "minmax": use MinMaxScaler
+- augment == 1일 경우, 학습 데이터에 랜덤 노이즈 추가 또는 랜덤 크롭, 플립 등의 변형을 수행한다.
+- 전처리된 데이터를 train/test로 분리하고 DataLoader 또는 Dataset 객체로 구성한다.
+
+# -----------------------------
+# (2) 모델 구성 및 학습
+# -----------------------------
+- 원본 코드에서 모델 구조를 유지하되, 하드코딩된 값을 argparse 인자와 연결한다.
+- torch, tensorflow, sklearn 등 어떤 프레임워크든 그대로 유지한다.
+- loss 함수, optimizer는 원본 코드에 존재하는 항목을 따른다.
+- 학습 루프 예시:
+    for epoch in range(args.epochs):
+        model.train()
+        for batch in train_loader:
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+    - 학습 로그는 stdout에 기록되며, loss 또는 accuracy를 간단히 출력한다.
+
+# -----------------------------
+# (3) 검증 및 평가지표 계산  ← 강제 템플릿
+# -----------------------------
+import time, json
+from sklearn.metrics import accuracy_score, f1_score
+
+# 검증 루프 예시
+model.eval()
+all_preds, all_labels = [], []
+for inputs, targets in valid_loader:
+    with torch.no_grad():
+        preds = model(inputs)
+        all_preds.extend(preds.argmax(dim=1).cpu().numpy())
+        all_labels.extend(targets.cpu().numpy())
+
+val_metric = accuracy_score(all_labels, all_preds)
+train_metric = getattr(globals(), "train_metric", val_metric)  # 학습 metric 존재 시 활용
+print(f"Validation: {val_metric:.4f} | Train: {train_metric:.4f}")
+
+# -----------------------------
+# (4) 모델 저장  ← 강제 템플릿
+# -----------------------------
+from pathlib import Path
+import pickle
+
+model_path = run_dir / "model.pt"
+model_path.parent.mkdir(parents=True, exist_ok=True)
+try:
+    import torch
+    torch.save(getattr(model, "state_dict", lambda: model)(), model_path)
+except Exception:
+    with open(model_path, "wb") as f:
+        pickle.dump(model, f)
+print(f"Model saved at: {model_path}")
+
+# -----------------------------
+# (5) result.json 파일 작성  ← 강제 템플릿
+# -----------------------------
+result = ⟦
+    "실행시간1": ⟦
+        "validation_score": val_metric,
+        "train_score": train_metric,
+        "params": vars(args),
+        "runtime_info": ⟦
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time_sec": time.time() - t0
+        ⟧,
+        "execution_status": ⟦
+            "success": True,
+            "error_type": None,
+            "error_message": None,
+            "exception_trace": None
+        ⟧
+    ⟧
+⟧
+
+with open(run_dir / "result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=4)
+print("Result JSON saved.")
+
+# -----------------------------
+# (6) stdout에 JSON 한 줄 출력  ← 강제 템플릿
+# -----------------------------
+sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\\n")
+sys.stdout.flush()
+
+# -----------------------------
+# (7) log 파일 기록  ← 강제 템플릿
+# -----------------------------
+# 로그 파일은 실행 시작 시 이미 stdout redirect를 통해 기록 중이다.
+# 학습/검증 중 모든 print 출력이 자동으로 run_dir/⟦timestamp⟧.log 에 저장된다.
+# 로그의 마지막 줄에 result.json 저장 완료 메시지를 포함한다.
+print("⟦timestamp⟧ execution completed successfully.")

@@ -1,0 +1,94 @@
+이 함수는 다음 단계를 수행한다:
+(1) 데이터 로드 및 전처리 (Tensor 변환, Dataloader 구성)
+(2) 모델 구성 및 학습 (torch loop)
+(3) 검증 및 평가지표 계산
+(4) 모델 저장 (torch.save)
+(5) result.json 파일 작성
+(6) stdout에 JSON 한 줄 출력
+(7) log 파일 기록
+
+
+# -----------------------------
+# (1) 데이터 로드 및 전처리
+# -----------------------------
+- torch.utils.data.Dataset과 DataLoader를 사용.
+- train_path, test_path로부터 데이터를 읽어 Tensor로 변환.
+- 전처리 옵션 예시:
+    --shuffle (1/0)
+    --augment (1/0)
+    --num_workers (int)
+- healthcheck 모드에서는 첫 배치까지만 forward 후 “READY” 출력 후 종료.
+
+# -----------------------------
+# (2) 모델 구성 및 학습
+# -----------------------------
+- 원본 코드에서 모델 아키텍처를 그대로 가져온다.
+- loss, optimizer를 정의하고 학습 루프 구성.
+- for epoch in range(args.epochs):
+      model.train()
+      for batch in train_loader:
+          outputs = model(inputs)
+          loss = criterion(outputs, targets)
+          optimizer.zero_grad()
+          loss.backward()
+          optimizer.step()
+- 로그로 epoch별 loss, accuracy를 stdout에 출력.
+
+# -----------------------------
+# (3) 검증 및 평가지표 계산  ← 강제 템플릿
+# -----------------------------
+val_metric, train_metric = 0.0, 0.0
+model.eval()
+correct, total = 0, 0
+with torch.no_grad():
+    for inputs, labels in valid_loader:
+        outputs = model(inputs)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+val_metric = correct / total if total > 0 else 0
+print(f"Validation Accuracy: {val_metric:.4f}")
+
+# -----------------------------
+# (4) 모델 저장  ← 강제 템플릿
+# -----------------------------
+from pathlib import Path
+model_path = run_dir / "model.pt"
+torch.save(model.state_dict(), model_path)
+print(f"Model saved at: {model_path}")
+
+# -----------------------------
+# (5) result.json 파일 작성  ← 강제 템플릿
+# -----------------------------
+result = ⟦
+    "실행시간1": ⟦
+        "validation_score": val_metric,
+        "train_score": train_metric,
+        "params": vars(args),
+        "runtime_info": ⟦
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time_sec": time.time() - t0
+        ⟧,
+        "execution_status": ⟦
+            "success": True,
+            "error_type": None,
+            "error_message": None,
+            "exception_trace": None
+        ⟧
+    ⟧
+⟧
+with open(run_dir / "result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=4)
+
+# -----------------------------
+# (6) stdout에 JSON 한 줄 출력  ← 강제 템플릿
+# -----------------------------
+sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\\n")
+sys.stdout.flush()
+
+# -----------------------------
+# (7) log 파일 기록  ← 강제 템플릿
+# -----------------------------
+# stdout 리다이렉션 자동 기록
+print("⟦timestamp⟧ execution completed successfully.")

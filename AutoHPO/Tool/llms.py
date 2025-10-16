@@ -17,6 +17,27 @@
 | o3-mini             | $1.10      | $0.55             | $4.40       | 200,000        | 100,000           | Oct 01, 2023     |
 | gpt-4.5-preview     | $75.00     | $37.50            | $150.00     | –              | –                 | –                |
 
+
+#### codex모델 사용예시
+codex = ChatOpenAI(model="gpt-5-codex",
+                   api_key=...,
+                    temperature=0,
+                    max_retries=2,
+                    reasoning={
+                            "effort": "medium",  # can be "low", "medium", or "high"
+                    }),
+messages = [
+    (
+        "system",
+        "You are a helpful developer who writes code for specific tasks",
+    ),
+    ("human", "write me a simple integer sorting code"),
+]
+ai_msg = codex[0].invoke(messages)
+ai_msg
+
+
+
 '''
 
 from langchain_openai import ChatOpenAI
@@ -33,8 +54,56 @@ api_key = os.getenv("UPSTAGE_API_KEY")
 api_key = os.getenv("OPENAI_API_KEY")
 # load_dotenv() 
 
-        
+
+# reasoning_effort: Optional[str] = None
+#     """Constrains effort on reasoning for reasoning models. For use with the Chat
+#     Completions API.
+
+#     Reasoning models only, like OpenAI o1, o3, and o4-mini.
+
+#     Currently supported values are ``'minimal'``, ``'low'``, ``'medium'``, and
+#     ``'high'``. Reducing reasoning effort can result in faster responses and fewer
+#     tokens used on reasoning in a response.
+
+#     .. versionadded:: 0.2.14
+#     """
+#     reasoning: Optional[dict[str, Any]] = None
+#     """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
+#     o4-mini, etc.). For use with the Responses API.
+
+#     Example:
+
+#     .. code-block:: python
+
+#         reasoning={
+#             "effort": "medium",  # can be "low", "medium", or "high"
+#             "summary": "auto",  # can be "auto", "concise", or "detailed"
+#         }
+
+#     .. versionadded:: 0.3.24
+
+#     """
+
+coding_agent = ChatOpenAI(model="gpt-5-codex",
+                    temperature=0,
+                    max_retries=2,
+                    reasoning={
+                            "effort": "high",  # can be "low", "medium", or "high"
+                    })
+
+param_selection_agent = ChatOpenAI(
+                    model="gpt-5",
+                    temperature=0,
+                    reasoning={
+                            "effort": "high",  # can be "low", "medium", or "high"
+                    }
+)
+
 llm_list = {
+    "gpt-5-codex" :  ChatOpenAI(model="gpt-5-codex",
+                                temperature=0,
+                                timeout=None,
+                                max_retries=2),
     "gpt-5" : ChatOpenAI(model="gpt-5"),
     "gpt-5-nano" : ChatOpenAI(model="gpt-5-nano"),
     "gpt-5-mini" : ChatOpenAI(model="gpt-5-mini"),

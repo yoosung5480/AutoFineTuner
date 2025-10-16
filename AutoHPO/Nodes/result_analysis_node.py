@@ -6,6 +6,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import END, StateGraph, START
 from pydantic import BaseModel, Field
 
+import pandas as pd
+import shutil
 from pathlib import Path
 import os
 
@@ -241,12 +243,95 @@ class FinetuingManager:
         )
         return container
     
+    
+EXPERIMENT_CSV_NAME = 'experiment.csv'
+def update_experiments_savefile(last_excute_result: dict, save_path: Path):
+    """
+    #### 기능
+    1. ./output/experiment.csv 파일에 현재 실험결과를 누적 저장.
+       - 없으면 새로 생성.
+    2. validation_score 기준으로 최고 성능 실험을 탐색.
+    3. 최고 성능 실험의 폴더 내용을 ./output/best/ 폴더에 복사.
 
+    #### input
+    - last_excute_result : dict (result.json 형식)
+    - save_path : Path('./output')
+
+    #### output
+    - 없음 (CSV 및 best 폴더 갱신)
+    """
+    experiment_save_path = save_path / EXPERIMENT_CSV_NAME
+
+    # 🔹 1️⃣ last_excute_result 구조 해석
+    run_id = list(last_excute_result.keys())[0]
+    data = last_excute_result[run_id]
+
+    validation_score = data.get("validation_score")
+    train_score = data.get("train_score")
+    params = data.get("params", {})
+
+    # 🔹 2️⃣ CSV 한 행(row) 구성
+    row_dict = {
+        "filename": run_id,
+        "validation_score": validation_score,
+        "train_score": train_score,
+    }
+    row_dict.update(params)
+
+    # 🔹 3️⃣ 기존 experiment.csv 불러오기 (없으면 생성)
+    if experiment_save_path.exists():
+        df = pd.read_csv(experiment_save_path)
+    else:
+        # 최초 생성: 컬럼 정의
+        base_cols = ["filename", "validation_score", "train_score"]
+        param_cols = list(params.keys())
+        df = pd.DataFrame(columns=base_cols + param_cols)
+
+    # 🔹 4️⃣ 새 행 추가 (중복 filename 제거 후 append)
+    df = df[df["filename"] != run_id]  # 같은 run_id 있으면 제거
+    df = pd.concat([df, pd.DataFrame([row_dict])], ignore_index=True)
+
+    # 🔹 5️⃣ CSV 저장
+    df.to_csv(experiment_save_path, index=False)
+
+    # 🔹 6️⃣ 최고 성능 실험 탐색
+    if not df.empty and "validation_score" in df.columns:
+        best_row = df.loc[df["validation_score"].astype(float).idxmax()]
+        best_filename = str(best_row["filename"])
+
+        best_src_dir = save_path / best_filename
+        best_dst_dir = save_path / "best"
+        best_dst_dir.mkdir(parents=True, exist_ok=True)
+
+        # 🔹 7️⃣ 기존 best 폴더 비우기 후 복사
+        for item in best_dst_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+
+        if best_src_dir.exists():
+            for file in best_src_dir.iterdir():
+                target_path = best_dst_dir / file.name
+                if file.is_file():
+                    shutil.copy2(file, target_path)
+                else:
+                    shutil.copytree(file, target_path, dirs_exist_ok=True)
+
+        print(f"[BEST MODEL UPDATED] {best_filename} (val={best_row['validation_score']})")
+
+    else:
+        print("[INFO] No valid validation_score column found in experiment.csv")
+
+    
+
+#####################################################################
+# 파일매니저 init
 finetuingManager = FinetuingManager()
 
 
+
 #####################################################################
-# 실질적 두뇌역할을 하는 llm 노드체인.
 # 실질적 두뇌역할을 하는 llm 노드체인.
 def result_analysis(container : Container) -> Container:  
     ''' 
@@ -265,13 +350,22 @@ def result_analysis(container : Container) -> Container:
     ''' 
     maxFineTuningTries = container.get("maxFineTuningTries")
     fineTuningTrieNum = container.get("fineTuningTrieNum")
+    save_path = container.get("savePath")   # Path('./output')
+    last_excute_result = container.get("lastExcuteResult")
     
+
     ## end_condition 확인 (횟수초과, 시간초과)
     if fineTuningTrieNum < maxFineTuningTries:
         fineTuningTrieNum += 1
 
     container = finetuingManager.evaluate_last_result(container)
     container = finetuingManager.search_next_train_params(container)
+
+    ## update experiments.csv
+    update_experiments_savefile(last_excute_result, save_path)
+    ## update bestParams
+  
+        
     container.update({
         "fineTuningTrieNum" : fineTuningTrieNum
     })

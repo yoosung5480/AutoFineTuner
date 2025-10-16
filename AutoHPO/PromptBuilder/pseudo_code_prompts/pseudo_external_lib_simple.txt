@@ -1,0 +1,100 @@
+이 함수는 다음 단계를 수행한다:
+(1) 데이터 로드 (라이브러리 내부 로더 사용)
+(2) 모델 구성 및 학습 (Trainer, YOLO, pipeline 등)
+(3) 검증 및 평가지표 계산
+(4) 모델 저장 (<save_dir>/model.pt)
+(5) result.json 파일 작성
+(6) stdout에 JSON 한 줄 출력
+(7) log 파일 기록
+
+
+# -----------------------------
+# (1) 데이터 로드
+# -----------------------------
+- 이 코드는 대부분 라이브러리 내부 데이터로더를 사용하므로, 외부 데이터 파일을 명시적으로 불러오지 않아도 된다.
+- argparse 인자로 전달된 데이터 경로나 설정파일(data.yaml, config.json 등)을 라이브러리에 넘긴다.
+- healthcheck 모드에서는 데이터 로더 초기화까지만 수행하고 종료한다.
+- 예시:
+    if args.framework == "yolov8": model = YOLO("yolov8n.pt")
+    if args.framework == "huggingface": Trainer(...)
+
+# -----------------------------
+# (2) 모델 구성 및 학습
+# -----------------------------
+- 프레임워크의 기본 호출 패턴을 그대로 유지한다.
+    예: YOLO.train(...), Trainer.train(), model.fit(), pipeline.train() 등
+- epochs, batch_size, lr, device 등 주요 하이퍼파라미터를 argparse 인자에 연결한다.
+- 라이브러리 내부의 자동 검증 기능이 있다면 별도 val loop는 생략하되, 결과 metric을 수집한다.
+- healthcheck 모드일 경우 READY 출력 후 즉시 종료한다.
+- 학습 로그는 stdout에 자동 기록되므로 별도 파일 조작은 하지 않는다.
+
+# -----------------------------
+# (3) 검증 및 평가지표 계산  ← 강제 템플릿
+# -----------------------------
+import time, json
+val_metric, train_metric = 0.0, 0.0
+try:
+    # 프레임워크 결과에서 metric 추출
+    if "metrics" in locals(): 
+        val_metric = metrics.get("val_accuracy", 0.0)
+        train_metric = metrics.get("train_accuracy", val_metric)
+except Exception:
+    pass
+print(f"Validation: {val_metric:.4f} | Train: {train_metric:.4f}")
+
+# -----------------------------
+# (4) 모델 저장  ← 강제 템플릿
+# -----------------------------
+from pathlib import Path
+import pickle
+model_path = run_dir / "model.pt"
+model_path.parent.mkdir(parents=True, exist_ok=True)
+try:
+    if hasattr(model, "save"):
+        model.save(str(model_path))
+    elif hasattr(model, "export"):
+        model.export(format="pt", path=str(model_path))
+    else:
+        with open(model_path, "wb") as f:
+            pickle.dump(model, f)
+except Exception:
+    with open(model_path, "wb") as f:
+        pickle.dump(model, f)
+print(f"Model saved at: {model_path}")
+
+# -----------------------------
+# (5) result.json 파일 작성  ← 강제 템플릿
+# -----------------------------
+result = ⟦
+    "실행시간1": ⟦
+        "validation_score": val_metric,
+        "train_score": train_metric,
+        "params": vars(args),
+        "runtime_info": ⟦
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time_sec": time.time() - t0
+        ⟧,
+        "execution_status": ⟦
+            "success": True,
+            "error_type": None,
+            "error_message": None,
+            "exception_trace": None
+        ⟧
+    ⟧
+⟧
+with open(run_dir / "result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=4)
+print("Result JSON saved.")
+
+# -----------------------------
+# (6) stdout에 JSON 한 줄 출력  ← 강제 템플릿
+# -----------------------------
+sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\\n")
+sys.stdout.flush()
+
+# -----------------------------
+# (7) log 파일 기록  ← 강제 템플릿
+# -----------------------------
+# stdout 리다이렉션에 의해 자동 기록됨
+print("⟦timestamp⟧ execution completed successfully.")

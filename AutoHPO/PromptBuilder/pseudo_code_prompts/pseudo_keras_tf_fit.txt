@@ -1,0 +1,91 @@
+이 함수는 다음 단계를 수행한다:
+(1) 데이터 로드 및 전처리 (tf.data 또는 ImageDataGenerator)
+(2) 모델 구성 및 학습 (Keras Sequential 또는 Functional API)
+(3) 검증 및 평가지표 계산
+(4) 모델 저장 (model.save)
+(5) result.json 파일 작성
+(6) stdout에 JSON 한 줄 출력
+(7) log 파일 기록
+
+
+# -----------------------------
+# (1) 데이터 로드 및 전처리
+# -----------------------------
+- train_path와 test_path를 기반으로 데이터를 불러온다.
+- 이미지의 경우 tf.keras.preprocessing.image_dataset_from_directory 사용.
+- CSV의 경우 pandas.read_csv() 후 numpy로 변환하여 tf.data.Dataset으로 감싼다.
+- 전처리 예시:
+    - 정규화: x/255.0
+    - 증강: tf.keras.layers.RandomFlip(), RandomRotation()
+- healthcheck 모드일 경우 샘플 1개만 통과시켜 입력 형태를 확인하고 "READY" 출력 후 종료한다.
+- 배치, 셔플 여부는 argparse 인자에서 읽는다.
+
+# -----------------------------
+# (2) 모델 구성 및 학습
+# -----------------------------
+- 원본 코드의 모델 정의를 유지한다. (Sequential 또는 Functional 구조)
+- 컴파일 시 loss, optimizer, metrics는 원본과 동일하게 유지하되,
+  lr, epochs, batch_size를 argparse 인자로 연결한다.
+- 학습 호출:
+    history = model.fit(train_ds, validation_data=val_ds, epochs=args.epochs, batch_size=args.batch_size)
+- history 객체에서 마지막 validation metric을 추출한다.
+- 학습 로그는 stdout에 epoch별 loss/acc 형태로 자동 출력된다.
+
+# -----------------------------
+# (3) 검증 및 평가지표 계산  ← 강제 템플릿
+# -----------------------------
+import numpy as np, time, json
+val_metric = 0.0
+train_metric = 0.0
+try:
+    if "history" in locals():
+        val_metric = float(history.history.get("val_accuracy", [0])[-1])
+        train_metric = float(history.history.get("accuracy", [0])[-1])
+except Exception:
+    pass
+print(f"Validation: {val_metric:.4f} | Train: {train_metric:.4f}")
+
+# -----------------------------
+# (4) 모델 저장  ← 강제 템플릿
+# -----------------------------
+from pathlib import Path
+model_path = run_dir / "model.pt"
+model.save(model_path)
+print(f"Model saved at: {model_path}")
+
+# -----------------------------
+# (5) result.json 파일 작성  ← 강제 템플릿
+# -----------------------------
+result = ⟦
+    "실행시간1": ⟦
+        "validation_score": val_metric,
+        "train_score": train_metric,
+        "params": vars(args),
+        "runtime_info": ⟦
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time_sec": time.time() - t0
+        ⟧,
+        "execution_status": ⟦
+            "success": True,
+            "error_type": None,
+            "error_message": None,
+            "exception_trace": None
+        ⟧
+    ⟧
+⟧
+with open(run_dir / "result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=4)
+print("Result JSON saved.")
+
+# -----------------------------
+# (6) stdout에 JSON 한 줄 출력  ← 강제 템플릿
+# -----------------------------
+sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\\n")
+sys.stdout.flush()
+
+# -----------------------------
+# (7) log 파일 기록  ← 강제 템플릿
+# -----------------------------
+# stdout 리다이렉션에 의해 자동 기록됨
+print("⟦timestamp⟧ execution completed successfully.")
