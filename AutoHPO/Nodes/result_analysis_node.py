@@ -13,7 +13,7 @@ import os
 
 import AutoHPO.Tool.read_write as rw
 from AutoHPO.Instance.container import Container
-from AutoHPO.Tool.llms import llm_list
+from AutoHPO.Tool.llms import llm_list, next_train_decide_llm
 from AutoHPO.Tool.etc import make_safe_code, make_dict_safe_str
 from AutoHPO.PromptBuilder import get_evaluate_result_promt, get_search_next_train_params_prompt
 
@@ -142,7 +142,7 @@ def _make_finetuning_history_str(finetuning_history: list[str]) -> str:
 class FinetuingManager:
     def __init__(self):
         self.llm_evaluator = llm_list["gpt-5"]
-        self.llm_HPO_selector = llm_list["gpt-5"]
+        self.llm_HPO_selector = llm_list["gpt-5"]   # 
         
 
     def evaluate_last_result(self, container : Container):
@@ -150,6 +150,7 @@ class FinetuingManager:
         #### input (Container)
         - lastExcuteResult : 가장 최신 코드 실행결과 result.json
         - userRequirements: Annotated[str, "사용자의 요구사항"]
+        - refactoredCode: Annotated[str, "재실행을 위해서 인자화된 코드"]
         - finetuningHistory (list): "현재까지의 파인튜닝 히스토리, 선정된 하이퍼 파라미터와, 훈련결과, 분석내용으로 구성돼있다."
 
         #### output (Container)
@@ -165,11 +166,12 @@ class FinetuingManager:
         last_excute_result = container.get("lastExcuteResult")
         user_requirements = container.get("userRequirements")
         finetuning_history = container.get("finetuningHistory")
+        refactoredCode = container.get("refactoredCode")
         finetuning_history_str = _make_finetuning_history_str(finetuning_history=finetuning_history)
         last_excute_result_str = make_dict_safe_str(last_excute_result)
 
         # 현재 훈련결과 프롬프트에 전달
-        evaluate_result_promt = get_evaluate_result_promt(last_excute_result_str, user_requirements, finetuning_history_str)
+        evaluate_result_promt = get_evaluate_result_promt(last_excute_result_str, user_requirements, finetuning_history_str, refactoredCode)
         # 현재 훈련결과 평가내용 받기
         prompt = ChatPromptTemplate.from_messages([
             ("system", "당신은 머신러닝 연구자입니다. 해당 훈련결과를 평가하고 파인튜닝 방향에 대해서 제시해야합니다."),

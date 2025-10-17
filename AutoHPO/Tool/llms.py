@@ -84,16 +84,17 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 #     """
 
-coding_agent = ChatOpenAI(model="gpt-5-codex",
-                    temperature=0,
-                    max_retries=2,
-                    reasoning={
-                            "effort": "high",  # can be "low", "medium", or "high"
-                    })
+# coding_llm = ChatOpenAI(model="gpt-5-codex") -> gpt-5-codex는 /v1/responses 전용 모델로 배포된 상태라서 아직 LangChain으론 사용안됨.
+coding_llm = ChatOpenAI(
+    model="gpt-5",
+    temperature=0,
+    reasoning={"effort": "high"}
+)
 
-param_selection_agent = ChatOpenAI(
+next_train_decide_llm = ChatOpenAI(
                     model="gpt-5",
-                    temperature=0,
+                    temperature=1.0,
+                    max_retries=2,
                     reasoning={
                             "effort": "high",  # can be "low", "medium", or "high"
                     }

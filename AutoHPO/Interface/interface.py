@@ -107,11 +107,11 @@ def get_container_from_user() -> Container:
 
 
     container = make_container()
-    sourceCodePath = Path('./target_titanic.py')
-    condaEnv = "machine_learning"
-    userRequirements = "features중에서 feature를 선택하는것도 파라미터 튜닝작업에 포함했으면 한다. Pclass, Sex, Age 는 반드시 포함해야한다. 그 외에 피쳐는 조합별로 수행해보며 수행한다."
-    repairMaxTries = 2
-    maxFineTuningTries = 3
+    sourceCodePath = Path('./house_price.py')
+    condaEnv = "ML"
+    userRequirements = "집값 데이터셋을 통해서, 집값을 regression해야한다. train 데이터는 대략 1,460개 이다. 상위 K개의 특성을 정하는것 또한 파라미터화해서 파인튜닝 훈련과정에 포함시켜야한다. "
+    repairMaxTries = 3
+    maxFineTuningTries = 30
     savePath = Path("./output")
 
     container.update({
@@ -119,7 +119,7 @@ def get_container_from_user() -> Container:
         "condaEnv": condaEnv,
         "userRequirements": userRequirements,
         "repairMaxTries": repairMaxTries,
-        "fineTuningTrieNum": maxFineTuningTries,
+        "maxFineTuningTries": maxFineTuningTries,
         "savePath": savePath
     })
     return container

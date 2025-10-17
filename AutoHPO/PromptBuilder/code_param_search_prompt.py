@@ -17,6 +17,7 @@ def get_param_list_prompt(source_code: str, user_requirements: str) -> str:
     - 모델, 데이터 로더, 학습 루프 등에서 '수동 설정된 값(epochs, lr, batch_size 등)'을 찾아내어 리스트 형태로 반환해야 한다.
     """
     source_code = make_safe_code(source_code)
+    user_requirements = make_safe_code(user_requirements)
     prompt = f"""
         # 역할
         너는 머신러닝/딥러닝 코드를 분석하여, 하드코딩된 설정값 중에서 외부에서 인자화(argparse 등)하기 적합한 하이퍼파라미터 목록을 제안하는 전문 분석가이다.

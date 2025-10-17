@@ -1,7 +1,7 @@
 import AutoHPO.Tool.read_write as rw
 
 from AutoHPO.Instance.container  import Container
-from AutoHPO.Tool.llms import llm_list
+from AutoHPO.Tool.llms import llm_list, coding_llm
 from AutoHPO.PromptBuilder import get_code_rewrite_prompt
 
 from pydantic import BaseModel, Field   
@@ -12,7 +12,7 @@ from pathlib import Path
 class CodeResponse(BaseModel):
     code: str = Field(..., description="실행 가능한 파이썬 코드")
 
-llm = llm_list["gpt-4.1"]
+llm = llm_list["gpt-5"] # 
 code_parser = PydanticOutputParser(pydantic_object=CodeResponse)
 
 # Done.

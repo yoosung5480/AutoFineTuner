@@ -15,6 +15,7 @@ def get_anaylsis_prompt(source_code: str, user_requirements: str) -> str:
     - 모델, 학습 루프, 손실 계산, 데이터 로드 등 ML 관련 구성요소가 포함되어 있으면 True로 판단한다.
     """
     source_code = make_safe_code(source_code)
+    user_requirements = make_safe_code(user_requirements)
     prompt = f"""
         # 역할
         너는 머신러닝/딥러닝 코드를 판별하는 전문 개발자이다.

@@ -3,10 +3,15 @@ from AutoHPO.Tool.etc import make_safe_code
 
 
 
-def get_evaluate_result_promt(last_excute_result : str, user_requirements : str, finetuning_history_str : str):
+def get_evaluate_result_promt(last_excute_result : str, user_requirements : str, finetuning_history_str : str, refactoredCode : str):
     ''' 
     현재 훈련결과에 대한 분석과 평가를 수행하도록 하는 프롬프트.
     '''
+    last_excute_result = make_safe_code(last_excute_result)
+    user_requirements = make_safe_code(user_requirements)
+    finetuning_history_str = make_safe_code(finetuning_history_str)
+    refactoredCode = make_safe_code(refactoredCode)
+
     evaluate_result_promt = f'''
     # 역할
     당신은 머신러닝 파인튜닝 과정의 연구 책임자입니다.
@@ -36,6 +41,11 @@ def get_evaluate_result_promt(last_excute_result : str, user_requirements : str,
     {finetuning_history_str}
     ⟧
 
+    ## (4) 현재 구현된 소스코드
+    ⟦
+    {refactoredCode}
+    ⟧
+    
     # 출력형식
     한 문단 요약문으로 결과를 평가하고, 다음 훈련에서 어떤 방향(예: 에포크 증가, 러닝레이트 조정 등)이 필요할지 기술하라.
     '''
@@ -44,6 +54,8 @@ def get_evaluate_result_promt(last_excute_result : str, user_requirements : str,
     
 
 def get_search_next_train_params_prompt(args : str, user_requirements : str, finetuning_history_str : str):
+    user_requirements = make_safe_code(user_requirements)
+    finetuning_history_str = make_safe_code(finetuning_history_str)
     ''' 
     다음 훈련에서 사용할 최적의 파라미터를 결정하기 위한 LLM 프롬프트.
     '''

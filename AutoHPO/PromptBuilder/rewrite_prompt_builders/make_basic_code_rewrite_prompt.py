@@ -169,14 +169,15 @@ def get_prompt_base_header(json_skeleton : str, save_path:str):
     # ===============================================
     # (1) 결과 파일 구조 (필수)
     # ===============================================
-    output/
+    {save_path}/
         ⟦실행시간⟧/                  ← 실행 시각 기반 하위 폴더 (예: 20251014024632)
             result.json              ← 학습 결과 JSON
             model.pt                 ← 학습된 모델 가중치
             ⟦실행시간⟧.log           ← 모든 stdout 로그 저장
+            ...                     ← 그 외 원래 구현된 로직의 코드 실행결과 부산물
 
     주의: result.json, model.pt, 로그파일은 반드시 동일한 하위 폴더에 저장되어야 한다.  (추가 부산물 가능)
-    즉, output/⟦실행시간⟧/ 내부에 ⟦실행시간⟧.log,result.json, model.pt등의 추가 부산물 파일이 모두 존재해야 한다.
+    즉, {save_path}/⟦실행시간⟧/ 내부에 ⟦실행시간⟧.log,result.json, model.pt등의 추가 부산물 파일이 모두 존재해야 한다.
     
     ## 유지 원칙
     - 데이터 경로/입출력 포맷/주요 알고리즘 로직은 반드시 유지
@@ -200,6 +201,7 @@ def get_prompt_base_header(json_skeleton : str, save_path:str):
     2. 모든 출력(log, result.json, model.pt)을 **이 run_dir 안에 저장**
     3. stdout을 run_dir/⟦timestamp⟧.log 로 리다이렉션
     4. 학습 완료 후 result.json을 다음 구조로 저장
+    5. 원래 생성되던 부산물들은 생성 경로만 Path('{save_path}/⟦실행시간⟧/')
 
     ### result.json 구조 (강제)
     아래의 스켈레톤 구조를 그대로 따르고, None 또는 placeholder는 실행 중 실제 값으로 채운다:

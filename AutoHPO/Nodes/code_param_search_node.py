@@ -13,7 +13,7 @@ class HyperParamListResponse(BaseModel):
     paramList: list[str] = Field(..., description="예시형식 : [\"epochs\", \"learning_rate\", \"drop_out\"] 외부 변수화 하이퍼파라미터 후보리스트")
 
 # llm 선정
-llm = llm_list["gpt-4.1-mini"]
+llm = llm_list["gpt-4.1-mini"] 
 # 파서 생성
 param_list_parser = PydanticOutputParser(pydantic_object=HyperParamListResponse)
 
