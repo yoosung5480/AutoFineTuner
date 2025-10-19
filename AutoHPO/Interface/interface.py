@@ -107,9 +107,9 @@ def get_container_from_user() -> Container:
 
 
     container = make_container()
-    sourceCodePath = Path('./house_price.py')
+    sourceCodePath = Path('./target_titanic.py')
     condaEnv = "ML"
-    userRequirements = "집값 데이터셋을 통해서, 집값을 regression해야한다. train 데이터는 대략 1,460개 이다. 상위 K개의 특성을 정하는것 또한 파라미터화해서 파인튜닝 훈련과정에 포함시켜야한다. "
+    userRequirements = "훈련데이터셋과 검증데이터셋으로 나누는 그 비율도 파라미터 조정과정 일부로 사용해줘. 그리고 데이터셋에서 선택할 특성도 파라미터화해서 하이퍼 파라미터로 활용해. 대신 Pclass, Sex, Age 이 3개의 특성은 필수로 포함하고 나머지는 너가 훈련마다 적절히 선택해줘.  그리고 트랜스포머 모델 layer개수와 head개수도 인자화해서 그 개수를 적절히 나눠가면서 실험해봐. 참고로 훈련 데이터는 총 890개의 행이야. "
     repairMaxTries = 3
     maxFineTuningTries = 30
     savePath = Path("./output")
@@ -221,16 +221,19 @@ def autoHPO_start_interface():
 
 def analysis_experiment_savefile(save_path: Path):
     '''
-    훈련결과가 저장된 csv파일과, 최고성능이 들어있는 파일에서 해당파일의 데이터를 요약설명해준다.
-    훈련과정의 plot곡선과, best/result.json의 'validation_score', "train_score", "params" 를 정리해서 보기좋게 프린트해준다.
-
-    훈련과정의 plot곡선은 validation_score, train_score를 기준으로 가장 점수가 높은것부터 오름차순으로 line-plot으로그린다.
-    가로축은 (1)validation_score, (2)train_score를
-    세로축은 filename이다. (filename은 실행시간으로 저장돼있고, unique하다.)
+    훈련 결과 CSV와 best/result.json 파일을 기반으로
+    실험 리더보드를 시각화 및 요약 출력하고, 결과를 저장한다.
+    
+    저장 항목:
+      - best/validation_leaderboard.png
+      - best/train_leaderboard.png
+      - best/leaderboard_summary.csv
     '''
     experiment_csv_path = save_path / 'experiment.csv'
     best_result_path = save_path / 'best' / 'result.json'
+    save_dir = best_result_path.parent  # /best 디렉토리
 
+    # ---------------------- 파일 로드 ----------------------
     try:
         df = pd.read_csv(experiment_csv_path)
     except Exception as e:
@@ -243,28 +246,72 @@ def analysis_experiment_savefile(save_path: Path):
         print("[오류] best/result.json 파일을 읽는 중 오류 발생:", e)
         return
 
+    # ---------------------- 데이터 요약 ----------------------
     print("\n===== 훈련 결과 요약 =====")
     print(f"총 실험 횟수: {len(df)}")
     print("상위 5개 결과:")
     print(df.sort_values("validation_score", ascending=False).head(5))
 
-    # Plot
-    plt.figure(figsize=(8, 5))
-    df_sorted = df.sort_values("validation_score", ascending=False)
-    sns.lineplot(x="validation_score", y="filename", data=df_sorted, label="Validation Score")
-    sns.lineplot(x="train_score", y="filename", data=df_sorted, label="Train Score", linestyle="--")
-    plt.title("Experiment Performance Trend")
-    plt.xlabel("Score")
-    plt.ylabel("Experiment (filename)")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # filename 문자열 변환 (스케일 문제 방지)
+    df["filename"] = df["filename"].astype(str)
 
-    print("\n===== Best Result Summary =====")
-    for key, value in best_result_json.items():
-        print(f"\n실행ID: {key}")
-        print(f"Validation Score: {value['validation_score']}")
-        print(f"Train Score: {value['train_score']}")
-        print("Params:")
-        for p, pv in value['params'].items():
-            print(f"  - {p}: {pv}")
+    # ---------------------- Validation Score Leaderboard ----------------------
+    top_val = df.sort_values("validation_score", ascending=False).head(10)
+
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(
+        data=top_val,
+        x="validation_score",
+        y="filename",
+        palette="Blues_r",
+        orient="h"
+    )
+    plt.title("🏆 Validation Score Leaderboard (Top 10)")
+    plt.xlabel("Validation Score")
+    plt.ylabel("Experiment Filename")
+
+    # 각 막대 끝에 수치 표시
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.4f", label_type="edge", padding=3, fontsize=9, color="black")
+
+    plt.tight_layout()
+    val_plot_path = save_dir / "validation_leaderboard.png"
+    plt.savefig(val_plot_path, dpi=200)
+    plt.show()
+    print(f"[저장됨] {val_plot_path}")
+
+    # ---------------------- Train Score Leaderboard ----------------------
+    top_train = df.sort_values("train_score", ascending=False).head(10)
+
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(
+        data=top_train,
+        x="train_score",
+        y="filename",
+        palette="Greens_r",
+        orient="h"
+    )
+    plt.title("🏋️‍♂️ Train Score Leaderboard (Top 10)")
+    plt.xlabel("Train Score")
+    plt.ylabel("Experiment Filename")
+
+    # 각 막대 끝에 수치 표시
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.4f", label_type="edge", padding=3, fontsize=9, color="black")
+
+    plt.tight_layout()
+    train_plot_path = save_dir / "train_leaderboard.png"
+    plt.savefig(train_plot_path, dpi=200)
+    plt.show()
+    print(f"[저장됨] {train_plot_path}")
+
+    # ---------------------- Leaderboard Summary Table ----------------------
+    summary_path = save_dir / "leaderboard_summary.csv"
+    merged_top = pd.merge(
+        top_val[["filename", "validation_score"]],
+        top_train[["filename", "train_score"]],
+        on="filename",
+        how="outer"
+    )
+    merged_top.to_csv(summary_path, index=False)
+    print(f"[저장됨] {summary_path}")

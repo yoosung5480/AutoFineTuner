@@ -38,7 +38,7 @@ def get_result_skeleton(hyper_params, save_path, conda_env, python_env):
         "healthcheack": 0
     })
     return {
-        "실행시간1": {          
+        "<자동 기록된 실행시간>": {          
             "validation_score": None,
             "train_score": None,
             "params": params_dict,

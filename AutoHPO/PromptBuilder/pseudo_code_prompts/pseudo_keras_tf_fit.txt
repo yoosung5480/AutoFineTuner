@@ -56,8 +56,9 @@ print(f"Model saved at: {model_path}")
 # -----------------------------
 # (5) result.json 파일 작성  ← 강제 템플릿
 # -----------------------------
+timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 result = ⟦
-    "실행시간1": ⟦
+    timestamp: ⟦
         "validation_score": val_metric,
         "train_score": train_metric,
         "params": vars(args),
